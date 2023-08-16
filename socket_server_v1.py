@@ -100,6 +100,11 @@ def run_server():
         def generate_response():
             print("inside generate_response")
             while conn.connect:
+                data = conn.recv(1024)
+                if data == b"":
+                   print("Client disconnected")
+                   conn.close()
+                   break
                 # Get the prompt from the client
                 prompt = conn.recv(1024).decode()
                 #print("this is the prompt", prompt)
