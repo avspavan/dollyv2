@@ -28,5 +28,15 @@ def get_generated_text(prompt):
     return generated_text
 
 if __name__ == "__main__":
-    prompt = "Summarize the paragraph. Linux is a versatile and open-source operating system renowned for its stability, security, and flexibility. Developed as a Unix-like system, Linux has gained widespread popularity due to its ability to run on a wide range of hardware, from servers and desktop computers to embedded devices and smartphones. Its modular design allows users to choose from various distributions, each tailored to specific needs and preferences. Linux's robust command-line interface empowers users with fine-grained control over system configurations and tasks, making it a favorite among developers, system administrators, and tech enthusiasts. The collaborative nature of the open-source community has led to continuous innovation and rapid evolution, ensuring that Linux remains at the forefront of modern computing."
+    file_path = "./virat.txt"  
+    try:
+        with open(file_path, 'r') as file:
+            file_content = file.read()
+            print("File content:\n", file_content)  # Print the content of the file
+    except FileNotFoundError:
+        print(f"File '{file_path}' not found.")
+    except Exception as e:
+        print("An error occurred:", str(e))
+
+    prompt = "Summarize the paragraph" + file_content
     generated_text = get_generated_text(prompt)
