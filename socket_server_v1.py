@@ -85,12 +85,16 @@ def run_server():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Bind the socket to a port
-    host = "localhost"
-    port = 8080
+    #host = "localhost"
+    host = "0.0.0.0"
+    #host = "35.163.197.34"
+    port = 8000
     sock.bind((host, port))
 
     # Listen for connections
+    print("listening")
     sock.listen(5)
+    print("Done listening")
 
     while True:
         # Accept a connection
@@ -100,13 +104,13 @@ def run_server():
         def generate_response():
             print("inside generate_response")
             while conn.connect:
-                data = conn.recv(1024)
+                data = conn.recv(2048)
                 if data == b"":
                    print("Client disconnected")
                    conn.close()
                    break
                 # Get the prompt from the client
-                prompt = conn.recv(1024).decode()
+                prompt = conn.recv(2048).decode()
                 #print("this is the prompt", prompt)
 
                 # Prepare input prompt according to model expected template
@@ -118,7 +122,7 @@ def run_server():
 
                 # Start generation on a separate thread, so that we don't block the UI. The text is pulled from the streamer
                 # in the main thread. Adds timeout to the streamer to handle exceptions in the generation thread.
-                streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+                streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True, timeout=10)
                 generate_kwargs = dict(
                     model_inputs,
                     streamer=streamer,
@@ -144,7 +148,7 @@ def run_server():
                     model_output += new_text
                 # Send a message to the client to let it know that the streaming is done
                 done_message = "STREAMING_COMPLETE".encode()
-                conn.sendall(done_message)
+                conn.sendall(done_message, 2048)
                 time.sleep(5)
                 # Check if the client is still connected
                 data = conn.recv(1024)
