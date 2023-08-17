@@ -105,13 +105,14 @@ def run_server():
             print("inside generate_response")
             while conn.connect:
                 data = conn.recv(2048)
+                print("data", data)
                 if data == b"":
                    print("Client disconnected")
                    conn.close()
                    break
                 # Get the prompt from the client
-                prompt = conn.recv(2048).decode()
-                #print("this is the prompt", prompt)
+                prompt = data.decode()
+                print("this is the prompt", prompt)
 
                 # Prepare input prompt according to model expected template
                 prompt_text = PROMPT_FOR_GENERATION_FORMAT.format(instruction=prompt)
@@ -126,7 +127,7 @@ def run_server():
                 generate_kwargs = dict(
                     model_inputs,
                     streamer=streamer,
-                    max_new_tokens=512,
+                    max_new_tokens=1024,
                     do_sample=True,
                     top_p=0.92,
                     temperature=0.8,
@@ -159,8 +160,11 @@ def run_server():
 
             # Close the connection
             conn.close()
-
-        generate_response()
+        try:
+            generate_response()
+        except KeyboardInterrupt:
+            print("Client disconnected")
+            conn.close()
 
     return
 
