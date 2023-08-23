@@ -12,16 +12,22 @@ import traceback
 
 core = Core()
 device = 'CPU'
-model_id = "databricks/dolly-v2-3b"
-model_path = Path("dolly-v2-3b")
+#model_id = "databricks/dolly-v2-3b"
+model_id = "meta-llama/Llama-2-13b-chat"
+#model_path = Path("dolly-v2-3b")
+#model_path = Path("/home/ubuntu/pavan/openvino_notebooks/notebooks/240-dolly-2-instruction-following/llama7b")
+model_path = Path("llama7b")
 
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+#tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer = AutoTokenizer.from_pretrained(model_path)
 
 current_device = device
 
 if model_path.exists():
     ov_model = OVModelForCausalLM.from_pretrained(model_path, device=current_device)
 else:
+    print("couldn't find the model")
+    exit
     ov_model = OVModelForCausalLM.from_pretrained(model_id, device=current_device, from_transformers=True)
     ov_model.save_pretrained(model_path)
 
@@ -83,21 +89,29 @@ if tokenizer_response_key:
 
 
 def generate_response(conn):
+    print(" ")
     print("inside generate_response")
-    while conn.connect:
+    while True:
         data = conn.recv(2048)
-        print("data", data)
+        #print("data", data)
         if data == b"":
+           print(" ")
            print("Client disconnected")
            conn.close()
            break
         # Get the prompt from the client
         prompt = data.decode()
-        print("this is the prompt", prompt)
+        print("This is the input from the client: ", prompt)
 
         # Prepare input prompt according to model expected template
         prompt_text = PROMPT_FOR_GENERATION_FORMAT.format(instruction=prompt)
-        print("this is the prompt", prompt_text)
+        print(" ")
+        print("___________________________________________________________________________________")
+        print(" ")
+        print("This is the entire prompt: ", prompt_text)
+        print(" ")
+        print("___________________________________________________________________________________")
+        print(" ")
 
         # Tokenize the user text.
         model_inputs = tokenizer(prompt_text, return_tensors="pt")
@@ -131,9 +145,9 @@ def generate_response(conn):
         num_tokens = 0
         try:
             for new_text in streamer:
+                conn.sendall(new_text.encode())
                 print(new_text, end="")    
                 sys.stdout.flush()
-                conn.sendall(new_text.encode())
                 model_output += new_text
         except RuntimeError as e:
             if "REQUEST_BUSY" in str(e):
@@ -157,25 +171,15 @@ def generate_response(conn):
                     time.sleep(5)
                     # Check if the client is still connected
                     data = conn.recv(1024)
+                    #print("data", data)
                     if data == b"":
+                       print(" ")
                        print("Client disconnected")
                     conn.close()
+                    break
                 except Exception as e:
                     print("Error while closing connection:", e)
             print("Connection closed")
-        # Send a message to the client to let it know that the streaming is done
-        #done_message = "STREAMING_COMPLETE".encode()
-        #conn.sendall(done_message, 2048)
-        #time.sleep(5)
-        # Check if the client is still connected
-        #data = conn.recv(1024)
-        #if data == b"":
-        #    print("Client disconnected")
-        #    conn.close()
-        #    break
-
-    # Close the connection
-    #conn.close()
     return
 
 def handle_client(conn):
@@ -220,6 +224,6 @@ if __name__ == "__main__":
     try:
         run_server()
     except Exception:
-        print("throwing exception")
+        print("throwing exception from run_server() code")
         time.sleep(5)
         run_server()
