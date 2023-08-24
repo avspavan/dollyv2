@@ -9,14 +9,21 @@ import socket
 import time
 import sys
 import traceback
+import os
 
-core = Core()
-device = 'CPU'
+# Get the model name from the environment variable or use the default
+#models included in this image: dolly-v2-3b, llama7b
+# choose the model in the dockerfile or here
+model_name = os.environ.get('DEFAULT_MODEL', 'llama7b')
+
 #model_id = "databricks/dolly-v2-3b"
-model_id = "meta-llama/Llama-2-13b-chat"
+#model_id = "meta-llama/Llama-2-13b-chat"
 #model_path = Path("dolly-v2-3b")
 #model_path = Path("/home/ubuntu/pavan/openvino_notebooks/notebooks/240-dolly-2-instruction-following/llama7b")
-model_path = Path("llama7b")
+core = Core()
+device = 'CPU'
+
+model_path = Path(model_name)
 
 #tokenizer = AutoTokenizer.from_pretrained(model_id)
 tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -31,11 +38,19 @@ else:
     ov_model = OVModelForCausalLM.from_pretrained(model_id, device=current_device, from_transformers=True)
     ov_model.save_pretrained(model_path)
 
+DEFAULT_SYSTEM_PROMPT = """\
+
+You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.  Your answers should not include any harmful, unethical, racist, sexist, toxic, dangerous, or illegal content. Please ensure that your responses are socially unbiased and positive in nature.
+
+If a question does not make any sense, or is not factually coherent, explain why instead of answering something not correct. If you don't know the answer to a question, please don't share false information.\
+
+"""
+
 INSTRUCTION_KEY = "### Instruction:"
 RESPONSE_KEY = "### Response:"
 END_KEY = "### End"
 INTRO_BLURB = (
-    "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+    "Below is an instruction that describes a task. Write a response that appropriately completes the request." + DEFAULT_SYSTEM_PROMPT
 )
 
 # This is the prompt that is used for generating responses using an already trained model.  It ends with the response
